@@ -3,6 +3,7 @@
  * @brief          : CG2028 Assignment - ElderCare Wearable Safety Companion
  * @author         : Hou Linxin
  * (c) CG2028 Teaching Team
+ * sunge nb
  ******************************************************************************/
 
 /*--------------------------- Includes ---------------------------------------*/
