@@ -169,7 +169,7 @@ static void SystemClock_Config(void)
     osc.PLL.PLLM = 1;
     osc.PLL.PLLN = 40;
     osc.PLL.PLLR = 2;
-    osc.PLL.PLLP = 7;
+    osc.PLL.PLLP = 7; //not required
     osc.PLL.PLLQ = 4;
     if (HAL_RCC_OscConfig(&osc) != HAL_OK)
     {
