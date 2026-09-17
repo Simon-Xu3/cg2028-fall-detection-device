@@ -21,6 +21,7 @@
 #define NORMAL_LED_DELAY_MS       1000
 #define FALL_LED_DELAY_MS          150
 
+static void SystemClock_Config(void);
 static void UART1_Init(void);
 static void UART_Send(const char *text);
 
@@ -32,10 +33,13 @@ UART_HandleTypeDef huart1;
 int main(void)
 {
     HAL_Init();
+    SystemClock_Config();   /* 80 MHz, the BSP I2C timing assumes this */
     UART1_Init();
 
     BSP_LED_Init(LED2);
     BSP_ACCELERO_Init();
+    /* Keep 52 Hz, change full scale from +-2 g to +-4 g so impacts do not clip. */
+    SENSOR_IO_Write(LSM6DSL_ACC_GYRO_I2C_ADDRESS_HIGH, LSM6DSL_ACC_GYRO_CTRL1_XL, 0x38);
     BSP_GYRO_Init();
     BSP_LED_Off(LED2);
 
@@ -146,6 +150,40 @@ int ewma_filter_C(int new_data, int old_output, int alpha_percent)
     int numerator = alpha_percent * new_data
                   + (100 - alpha_percent) * old_output;
     return numerator / 100;
+}
+
+/* MSI 4 MHz -> PLL -> 80 MHz system clock (same setup as the ST Wi-Fi example). */
+static void SystemClock_Config(void)
+{
+    RCC_OscInitTypeDef osc = {0};
+    RCC_ClkInitTypeDef clk = {0};
+
+    osc.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+    osc.MSIState = RCC_MSI_ON;
+    osc.MSIClockRange = RCC_MSIRANGE_6;
+    osc.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+    osc.PLL.PLLState = RCC_PLL_ON;
+    osc.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+    osc.PLL.PLLM = 1;
+    osc.PLL.PLLN = 40;
+    osc.PLL.PLLR = 2;
+    osc.PLL.PLLP = 7;
+    osc.PLL.PLLQ = 4;
+    if (HAL_RCC_OscConfig(&osc) != HAL_OK)
+    {
+        while (1);
+    }
+
+    clk.ClockType = RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK
+                  | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    clk.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    clk.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    clk.APB1CLKDivider = RCC_HCLK_DIV1;
+    clk.APB2CLKDivider = RCC_HCLK_DIV1;
+    if (HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_4) != HAL_OK)
+    {
+        while (1);
+    }
 }
 
 static void UART_Send(const char *text)
