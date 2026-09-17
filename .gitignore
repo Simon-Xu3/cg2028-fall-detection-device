@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# STM32CubeIDE workspace metadata
+/code/.metadata/
+
+# Generated build directories
+**/Debug/
+**/Release/
+
+# Compiler-generated files
+*.o
+*.d
+*.elf
+*.map
+*.list
+*.su
+*.cyclo
+
+# Empty wrapper projects created during ZIP import
+/code/CG2028_Assignment.zip_expanded/.project
+/code/CG2028_Assignment_Test.zip_expanded/.project
+
+# Original large ZIP archives
+/Assignment/*.zip
+
+# Future private configuration
+**/Core/Inc/secrets.h
