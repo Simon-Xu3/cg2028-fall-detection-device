@@ -16,7 +16,7 @@ void fall_detector_init(void);
 fall_state_t fall_detector_update(const motion_features_t *f, unsigned int now_ms);
 
 /* USER button pressed: go back to STATE_NORMAL. */
-void fall_detector_acknowledge(void);
+void fall_detector_ack(void);
 
 /* "NORMAL", "SUSPECT", ... for the UART output. */
 const char *fall_state_name(fall_state_t s);
