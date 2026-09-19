@@ -47,7 +47,6 @@
 ewma_filter:
     PUSH {r4-r7, lr}
 
-
     MOVS r3, #100
     MUL r4, r0, r2
     SUB r5, r3, r2
