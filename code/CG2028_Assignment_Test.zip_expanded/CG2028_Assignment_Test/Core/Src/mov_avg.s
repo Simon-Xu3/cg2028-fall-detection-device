@@ -14,8 +14,8 @@
 
 @ CG2028 Assignment
 @ (c) ECE NUS
-@ Write Student 1's Name here: ABCD (A1234567R)
-@ Write Student 2's Name here: WXYZ (A0000007X)
+@ Write Student 1's Name here: Xu Ruijie (A0334914A)
+@ Write Student 2's Name here: Lyu Jinhan (A0330854E)
 @
 @ Function prototype:
 @   int ewma_filter(int new_data, int old_output, int alpha_percent);
@@ -34,17 +34,26 @@
 @ - Do not call a C helper function and do not use floating-point instructions.
 @
 @ Register table:
-@   R0 ...
-@   R1 ...
-@   R2 ...
-@   R3 ...
-@   R4 ...
+@   R0 new_data
+@   R1 old_output
+@   R2 alpha_percent
+@   R3 = constant and divisor 100
+@   R4 = alpha_percent * new_data
+@   R5 = 100 - alpha_percent
+@   R6 = (100 - alpha_percent) * old_output
+@   R7 = numerator before division
 @
 @ Write your program from here.
 ewma_filter:
     PUSH {r4-r7, lr}
 
-    @ TODO: Implement the EWMA low-pass filter in pure ARM assembly.
+    MOVS r3, #100
+    MUL r4, r0, r2
+    SUB r5, r3, r2
+    MUL r6, r5, r1
+    ADD r7, r4, r6
+    SDIV r0, r7, r3
+
 
     POP  {r4-r7, pc}
 
