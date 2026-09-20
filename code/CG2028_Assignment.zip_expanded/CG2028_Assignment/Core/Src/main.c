@@ -3,8 +3,6 @@
  * @brief          : CG2028 Assignment - ElderCare Wearable Safety Companion
  * @author         : Hou Linxin
  * (c) CG2028 Teaching Team
- * sunge nb
- * mama
  ******************************************************************************/
 
 /*--------------------------- Includes ---------------------------------------*/
@@ -12,23 +10,23 @@
 #include "../../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_accelero.h"
 #include "../../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_gyro.h"
 
+#include "sensor_processing.h"
+#include "fall_detector.h"
+#include "status_indicator.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
 /*--------------------------- Configuration ----------------------------------*/
-#define EWMA_ALPHA_ACCEL_PERCENT   25
-#define EWMA_ALPHA_GYRO_PERCENT    25
-#define NORMAL_LED_DELAY_MS       1000
-#define FALL_LED_DELAY_MS          150
+#define SAMPLE_MS   20      /* read sensors 50 times a second */
+#define PRINT_MS    500     /* one UART line every half second */
 
 static void SystemClock_Config(void);
 static void UART1_Init(void);
 static void UART_Send(const char *text);
-
-extern int ewma_filter(int new_data, int old_output, int alpha_percent);
-//int ewma_filter_C(int new_data, int old_output, int alpha_percent);
+static void read_sensors(int accel_mg[3], int gyro_dps[3]);
 
 UART_HandleTypeDef huart1;
 
@@ -38,120 +36,92 @@ int main(void)
     SystemClock_Config();   /* 80 MHz, the BSP I2C timing assumes this */
     UART1_Init();
 
-    BSP_LED_Init(LED2);
     BSP_ACCELERO_Init();
     /* Keep 52 Hz, change full scale from +-2 g to +-4 g so impacts do not clip. */
     SENSOR_IO_Write(LSM6DSL_ACC_GYRO_I2C_ADDRESS_HIGH, LSM6DSL_ACC_GYRO_CTRL1_XL, 0x38);
     BSP_GYRO_Init();
-    BSP_LED_Off(LED2);
 
-    /* Previous EWMA outputs. The first test/application sample starts from 0. */
-    int accel_ewma_asm[3] = {0, 0, 0};
-    int gyro_ewma_asm[3]  = {0, 0, 0};
+    /* Clean 3 modules: EWMA -> old val; State: NORMAL; LED clean */
+    sensor_processing_init();
+    fall_detector_init();
+    status_indicator_init();    /* LED2 + user button */
 
-    /* Reference C states are kept separately for assembly verification. */
-    int accel_ewma_c[3] = {0, 0, 0};
-    int gyro_ewma_c[3]  = {0, 0, 0};
+    motion_features_t features = {0};
+    fall_state_t state = STATE_NORMAL;
 
-    unsigned long sample_number = 0;
+    unsigned int last_sample_time = HAL_GetTick();
+    unsigned int last_print_time = HAL_GetTick();
+
+    /* acc_mg   = acceleration magnitude in milli-g
+     * gyro_dps = gyroscope magnitude in degrees per second
+     * tilt_deg = tilt angle in degrees */
+    UART_Send("state,acc_mg,gyro_dps,tilt_deg,still\r\n");
 
     while (1)
     {
-        int16_t accel_raw_i16[3] = {0, 0, 0};
-        float gyro_raw_float[3] = {0.0f, 0.0f, 0.0f};
-        int gyro_raw_int[3] = {0, 0, 0};
+        unsigned int now = HAL_GetTick();
 
-        BSP_ACCELERO_AccGetXYZ(accel_raw_i16);
-        BSP_GYRO_GetXYZ(gyro_raw_float);
-
-        /* The supplied BSP reports gyroscope readings as floating-point raw
-         * values. Convert them to signed integers before passing them to the
-         * integer assembly routine. */
-        for (int axis = 0; axis < 3; axis++)
+        /* Every 20 ms: read, filter (assembly EWMA), run the state machine. */
+        if (now - last_sample_time >= SAMPLE_MS)
         {
-            gyro_raw_int[axis] = (int)gyro_raw_float[axis];
+            last_sample_time = now;
 
-            accel_ewma_asm[axis] = ewma_filter(
-                (int)accel_raw_i16[axis],
-                accel_ewma_asm[axis],
-                EWMA_ALPHA_ACCEL_PERCENT);
+            // [3] for X,Y,Z 3 axis
+            int accel_mg[3];
+            int gyro_dps[3];
+            read_sensors(accel_mg, gyro_dps);
 
-            gyro_ewma_asm[axis] = ewma_filter(
-                gyro_raw_int[axis],
-                gyro_ewma_asm[axis],
-                EWMA_ALPHA_GYRO_PERCENT);
-
-            accel_ewma_c[axis] = ewma_filter_C(
-                (int)accel_raw_i16[axis],
-                accel_ewma_c[axis],
-                EWMA_ALPHA_ACCEL_PERCENT);
-
-            gyro_ewma_c[axis] = ewma_filter_C(
-                gyro_raw_int[axis],
-                gyro_ewma_c[axis],
-                EWMA_ALPHA_GYRO_PERCENT);
+            sensor_processing_update(accel_mg, gyro_dps, &features);
+            state = fall_detector_update(&features, now);
         }
 
-        /* Accelerometer filtered readings are in meters per second squared. */
-        float accel_mps2[3] = {
-            accel_ewma_asm[0] * (9.80665f / 1000.0f),
-            accel_ewma_asm[1] * (9.80665f / 1000.0f),
-            accel_ewma_asm[2] * (9.80665f / 1000.0f)
-        };
-
-        /* Gyroscope filtered readings are in degrees per second. */
-        float gyro_dps[3] = {
-            gyro_ewma_asm[0] / 1000.0f,
-            gyro_ewma_asm[1] / 1000.0f,
-            gyro_ewma_asm[2] / 1000.0f
-        };
-
-        char buffer[320];
-        snprintf(buffer, sizeof(buffer),
-                 "Sample %lu\r\n"
-                 "Accel EWMA ASM [m/s^2]: X=%8.3f Y=%8.3f Z=%8.3f\r\n"
-                 "Gyro  EWMA ASM [dps]  : X=%8.3f Y=%8.3f Z=%8.3f\r\n",
-                 sample_number,
-                 accel_mps2[0], accel_mps2[1], accel_mps2[2],
-                 gyro_dps[0], gyro_dps[1], gyro_dps[2]);
-        UART_Send(buffer);
-
-        /* Optional debugging check. This confirms that the assembly routine
-         * matches the reference C routine for the current samples. */
-        if ((accel_ewma_asm[0] != accel_ewma_c[0]) ||
-            (accel_ewma_asm[1] != accel_ewma_c[1]) ||
-            (accel_ewma_asm[2] != accel_ewma_c[2]) ||
-            (gyro_ewma_asm[0] != gyro_ewma_c[0]) ||
-            (gyro_ewma_asm[1] != gyro_ewma_c[1]) ||
-            (gyro_ewma_asm[2] != gyro_ewma_c[2]))
+        /* Button press clears a confirmed fall. */
+        if (status_indicator_button_pressed())
         {
-            UART_Send("WARNING: Assembly and C EWMA outputs do not match.\r\n");
+            fall_detector_ack();
         }
 
-        /**************** Elderly wearable state logic starts here************************
-         * Compulsory requirements:
-         * 1. Use filtered accelerometer AND gyroscope readings.
-         * 2. Distinguish normal activity, near-fall movements, and a real fall.
-         * 3. Use a slow LED blink for normal operation and a fast blink after
-         *    a fall is detected.
-         *********************************************************************/
+        /* Slow blink normally, fast blink after a fall. Never blocks. */
+        status_indicator_update(state, now);
 
-        int fall_detected = 0;  /* TODO: replace with your fall-detection logic */
+        /* Every 500 ms: one CSV line, plus a warning if asm and C ever disagreed. */
+        if (now - last_print_time >= PRINT_MS)
+        {
+            last_print_time = now;
 
-        BSP_LED_Toggle(LED2);
-        HAL_Delay(fall_detected ? FALL_LED_DELAY_MS : NORMAL_LED_DELAY_MS);
+            char line[64];
+            sensor_processing_print(&features, line, sizeof(line));
+            UART_Send(fall_state_name(state));
+            UART_Send(",");
+            UART_Send(line);
 
-        sample_number++;
+            if (sensor_processing_mismatch_count() != 0)
+            {
+                snprintf(line, sizeof(line),
+                         "WARNING: asm/C EWMA mismatches = %d\r\n",
+                         sensor_processing_mismatch_count());
+                UART_Send(line);
+            }
+        }
+        /* CSV LINE: NORMAL,1058,0,2,1 */
     }
 }
 
-int ewma_filter_C(int new_data, int old_output, int alpha_percent)
+/* Accelerometer comes back in mg already. Gyro comes back as float mdps,
+ * so divide by 1000 to get whole degrees per second. */
+static void read_sensors(int accel_mg[3], int gyro_dps[3])
 {
-    /* Reference implementation for verification only. The assembly routine
-     * must be used in the actual sensor-processing and detection pipeline. */
-    int numerator = alpha_percent * new_data
-                  + (100 - alpha_percent) * old_output;
-    return numerator / 100;
+    int16_t accel_raw[3] = {0, 0, 0};
+    float gyro_raw[3] = {0.0f, 0.0f, 0.0f};
+
+    BSP_ACCELERO_AccGetXYZ(accel_raw);
+    BSP_GYRO_GetXYZ(gyro_raw);
+
+    for (int axis = 0; axis < 3; axis++)
+    {
+        accel_mg[axis] = (int)accel_raw[axis];
+        gyro_dps[axis] = (int)(gyro_raw[axis] / 1000.0f);
+    }
 }
 
 /* MSI 4 MHz -> PLL -> 80 MHz system clock (same setup as the ST Wi-Fi example). */

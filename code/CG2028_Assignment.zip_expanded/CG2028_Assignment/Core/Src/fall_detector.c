@@ -7,7 +7,7 @@
 #define LYING_TILT_DEG       60
 #define SUSPECT_TIMEOUT_MS   1000
 #define CONFIRM_STILL_MS     2000
-#define CONFIRM_TIMEOUT_MS   3000
+#define CONFIRM_TIMEOUT_MS   5000
 
 static fall_state_t state;
 static unsigned int state_since; // enter current state
