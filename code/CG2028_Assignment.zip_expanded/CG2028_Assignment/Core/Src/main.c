@@ -41,6 +41,7 @@ int main(void)
     SENSOR_IO_Write(LSM6DSL_ACC_GYRO_I2C_ADDRESS_HIGH, LSM6DSL_ACC_GYRO_CTRL1_XL, 0x38);
     BSP_GYRO_Init();
 
+    /* Clean 3 modules: EWMA -> old val; State: NORMAL; LED clean */
     sensor_processing_init();
     fall_detector_init();
     status_indicator_init();    /* LED2 + user button */
@@ -51,6 +52,9 @@ int main(void)
     unsigned int last_sample_time = HAL_GetTick();
     unsigned int last_print_time = HAL_GetTick();
 
+    /* acc_mg   = acceleration magnitude in milli-g
+     * gyro_dps = gyroscope magnitude in degrees per second
+     * tilt_deg = tilt angle in degrees */
     UART_Send("state,acc_mg,gyro_dps,tilt_deg,still\r\n");
 
     while (1)
@@ -62,6 +66,7 @@ int main(void)
         {
             last_sample_time = now;
 
+            // [3] for X,Y,Z 3 axis
             int accel_mg[3];
             int gyro_dps[3];
             read_sensors(accel_mg, gyro_dps);
@@ -98,6 +103,7 @@ int main(void)
                 UART_Send(line);
             }
         }
+        /* CSV LINE: NORMAL,1058,0,2,1 */
     }
 }
 
