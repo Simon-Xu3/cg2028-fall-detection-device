@@ -29,4 +29,4 @@
 **/Core/Inc/secrets.h
 
 # Telegram bot token and chat id
-/tools/secrets.sh
+/tools/secrets.py
