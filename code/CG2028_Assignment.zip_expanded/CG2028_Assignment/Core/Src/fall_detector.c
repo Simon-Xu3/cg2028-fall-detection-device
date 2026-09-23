@@ -9,10 +9,12 @@
 #define CONFIRM_STILL_MS     2000
 #define CONFIRM_TIMEOUT_MS   5000
 #define LONG_LIE_MS         30000   // no ack for 30 s after a fall -> escalate
+#define MOVED_MS              300   // must be not-still this long to count as movement
 
 static fall_state_t state;
 static unsigned int state_since; // enter current state
-static int moved_since_fall;     // any movement seen while in FALL
+static int moved_since_fall;     // real movement seen while in FALL
+static unsigned int not_still_since; // when the current not-still stretch began
 
 void fall_detector_init(void) {
 	state = STATE_NORMAL;
@@ -74,14 +76,18 @@ fall_state_t fall_detector_update(const motion_features_t *f, unsigned int now_m
 		if (passed_time >= CONFIRM_STILL_MS && f->tilt_deg > LYING_TILT_DEG && f->still) {
 			jump(STATE_FALL, now_ms);
 			moved_since_fall = 0;
+			not_still_since = now_ms;
 		} else if (passed_time > CONFIRM_TIMEOUT_MS) {
 			jump(STATE_NORMAL, now_ms);
 		}
 		break;
 
 	case STATE_FALL:
-		// remember if the person moved at all, even without pressing the button
-		if (!f->still) {
+		// a single noisy sample is not movement: the person must be
+		// not-still for MOVED_MS in a row before we say they moved
+		if (f->still) {
+			not_still_since = now_ms;
+		} else if (now_ms - not_still_since >= MOVED_MS) {
 			moved_since_fall = 1;
 		}
 		// nobody pressed the button for 30 s -> long lie, escalate
