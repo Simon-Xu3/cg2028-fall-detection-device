@@ -23,7 +23,7 @@ Row 3 is the one that loses marks: a flaky extra feature costs more than no feat
 |---|---|---|---|---|
 | E1 | `STATE_LONG_LIE`: in FALL, no button press and still lying for `LONG_LIE_MS` (30 s) -> escalate | B (Norman) | fall_detector.c/.h, main.c | state-machine extension, Long Lie escalation |
 | E2 | Grove buzzer: Morse SOS in FALL, faster SOS in LONG_LIE, one chirp on ack | A (Ruijie) | new buzzer.c/.h, main.c (3 lines) | SOS, alerting |
-| E3 | Telegram alert: board prints one `ALERT,...` line on UART, laptop script forwards it to a Telegram bot | A (Ruijie) | new tools/relay.py, main.c (print line) | alerting, communication |
+| E3 | Telegram alert: board prints one `ALERT,...` line on UART, laptop script forwards it to a Telegram bot | B (Norman) | tools/relay.sh (cat + grep + curl), main.c (print line, done in #6) | alerting, communication |
 | E4 | Wi-Fi direct to laptop (replaces the USB cable in E3) | nobody yet | wifi_alert.c + the 4 files from the teacher's Wifi(optional).zip | communication |
 
 E1-E3 are the target. E4 only if E1-E3 are merged and stable by 24 Sep; otherwise it is one
@@ -59,9 +59,9 @@ ALERT,LONG_LIE,<tick_ms>
 ALERT,ACK,<tick_ms>
 ```
 The normal `state,acc,gyro,tilt,still` line every 500 ms stays as it is.
-`tools/relay.py` (Python 3, pyserial + requests): opens the serial port, forwards every
+`tools/relay.sh` (bash: cat + grep + curl, no Python): opens the serial port, forwards every
 `ALERT,` line to a Telegram chat via a bot created with @BotFather. Token and chat id are
-read from `tools/secrets.env`, which is git-ignored (commit `tools/secrets.env.example`
+read from `tools/secrets.sh`, which is git-ignored (commit `tools/secrets.sh.example`
 instead). Message text:
 - FALL: "FALL DETECTED. Wearer has not pressed OK."
 - LONG_LIE: "NO RESPONSE FOR 30 s. Call an ambulance."
