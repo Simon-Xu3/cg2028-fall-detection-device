@@ -1,3 +1,10 @@
+/*
+ * buzzer.h
+ *
+ *  Created on: Sep 23, 2026
+ *      Author: Xu Ruijie (A0334914A)
+ */
+
 #ifndef BUZZER_H
 #define BUZZER_H
 

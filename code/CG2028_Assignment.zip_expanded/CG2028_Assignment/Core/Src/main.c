@@ -90,7 +90,8 @@ int main(void)
                     UART_Send(alert);
                 }
 
-                /* Grove buzzer: SOS in FALL, faster SOS once it escalates. */
+                /* Grove buzzer: SOS in FALL, faster SOS once it escalates,
+                 * silent in every other state. */
                 if (state == STATE_FALL)
                 {
                     buzzer_set(BUZZER_SOS);
@@ -98,6 +99,10 @@ int main(void)
                 else if (state == STATE_LONG_LIE)
                 {
                     buzzer_set(BUZZER_SOS_FAST);
+                }
+                else
+                {
+                    buzzer_set(BUZZER_OFF);   /* left FALL/LONG_LIE, or a near fall */
                 }
                 last_state = state;
             }
