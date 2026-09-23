@@ -19,7 +19,7 @@ void status_indicator_init(void) {
 void status_indicator_update(fall_state_t state, unsigned int now_ms) {
 	unsigned int period;
 
-	if (state == STATE_FALL) {
+	if (state == STATE_FALL || state == STATE_LONG_LIE) {
 		period = FAST_BLINK_MS;
 	} else {
 		period = SLOW_BLINK_MS;
