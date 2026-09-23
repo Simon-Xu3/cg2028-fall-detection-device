@@ -86,7 +86,7 @@ int main(void)
                     char alert[48];
                     snprintf(alert, sizeof(alert), "ALERT,%s,%u,moved=%d\r\n",
                              fall_state_name(state), now,
-                             fall_detector_moved_since_fall());
+                             fall_detector_moved_after_fall());
                     UART_Send(alert);
                 }
 

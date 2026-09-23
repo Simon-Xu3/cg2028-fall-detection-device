@@ -21,7 +21,7 @@ void fall_detector_ack(void);
 
 /* 1 if the wearer moved at any time since the fall was confirmed.
  * 0 in LONG_LIE means no response and no movement for 30 s. */
-int fall_detector_moved_since_fall(void);
+int fall_detector_moved_after_fall(void);
 
 /* "NORMAL", "SUSPECT", ... for the UART output. */
 const char *fall_state_name(fall_state_t s);

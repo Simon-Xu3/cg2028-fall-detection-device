@@ -13,13 +13,13 @@
 
 static fall_state_t state;
 static unsigned int state_since; // enter current state
-static int moved_since_fall;     // real movement seen while in FALL
-static unsigned int not_still_since; // when the current not-still stretch began
+static int moved_after_fall;     // real movement seen while in FALL
+static unsigned int last_still_time; // last tick when the board was still
 
 void fall_detector_init(void) {
 	state = STATE_NORMAL;
 	state_since = 0;
-	moved_since_fall = 0;
+	moved_after_fall = 0;
 }
 
 void fall_detector_ack(void) {
@@ -29,8 +29,8 @@ void fall_detector_ack(void) {
     }
 }
 
-int fall_detector_moved_since_fall(void) {
-	return moved_since_fall;
+int fall_detector_moved_after_fall(void) {
+	return moved_after_fall;
 }
 
 const char* fall_state_name(fall_state_t s) {
@@ -75,8 +75,8 @@ fall_state_t fall_detector_update(const motion_features_t *f, unsigned int now_m
 		// after 2 s the person must be lying still -> fall, 3 s passed -> got up
 		if (passed_time >= CONFIRM_STILL_MS && f->tilt_deg > LYING_TILT_DEG && f->still) {
 			jump(STATE_FALL, now_ms);
-			moved_since_fall = 0;
-			not_still_since = now_ms;
+			moved_after_fall = 0;
+			last_still_time = now_ms;
 		} else if (passed_time > CONFIRM_TIMEOUT_MS) {
 			jump(STATE_NORMAL, now_ms);
 		}
@@ -86,9 +86,9 @@ fall_state_t fall_detector_update(const motion_features_t *f, unsigned int now_m
 		// a single noisy sample is not movement: the person must be
 		// not-still for MOVED_MS in a row before we say they moved
 		if (f->still) {
-			not_still_since = now_ms;
-		} else if (now_ms - not_still_since >= MOVED_MS) {
-			moved_since_fall = 1;
+			last_still_time = now_ms;
+		} else if (now_ms - last_still_time >= MOVED_MS) {
+			moved_after_fall = 1;
 		}
 		// nobody pressed the button for 30 s -> long lie, escalate
 		if (passed_time >= LONG_LIE_MS) {
