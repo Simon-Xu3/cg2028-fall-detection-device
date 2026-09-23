@@ -31,3 +31,4 @@
 # Telegram bot token and chat id
 /tools/secrets.py
 __pycache__/
+/tools/secrets.sh
