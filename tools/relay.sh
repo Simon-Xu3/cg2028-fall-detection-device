@@ -12,7 +12,7 @@
 source "$(dirname "$0")/secrets.sh" || exit 1
 
 PORT=${1:-$(ls /dev/cu.usbmodem* | head -1)}
-echo "relay: reading $PORT, sending to chat $CHAT_ID"
+echo "relay: reading $PORT, sending to chat $CHAT_ID (every serial line is echoed, ALERT lines are sent)"
 
 send() {
     curl -s "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
@@ -22,7 +22,7 @@ send() {
 exec 3<>"$PORT"
 stty -f "$PORT" 115200 raw
 
-cat <&3 | grep --line-buffered '^ALERT' | while IFS=, read -r _ event tick moved; do
+cat <&3 | tee /dev/stderr | grep --line-buffered '^ALERT' | while IFS=, read -r _ event tick moved; do
     event=${event%$'\r'}      # the board ends lines with \r\n, drop the \r
     moved=${moved%$'\r'}
     case "$event" in
