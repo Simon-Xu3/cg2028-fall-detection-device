@@ -8,20 +8,27 @@
 #define SUSPECT_TIMEOUT_MS   1000
 #define CONFIRM_STILL_MS     2000
 #define CONFIRM_TIMEOUT_MS   5000
+#define LONG_LIE_MS         30000   // no ack for 30 s after a fall -> escalate
 
 static fall_state_t state;
 static unsigned int state_since; // enter current state
+static int moved_since_fall;     // any movement seen while in FALL
 
 void fall_detector_init(void) {
 	state = STATE_NORMAL;
 	state_since = 0;
+	moved_since_fall = 0;
 }
 
 void fall_detector_ack(void) {
 	// in FALL state it works
-    if (state == STATE_FALL) {
+    if (state == STATE_FALL || state == STATE_LONG_LIE) {
         state = STATE_NORMAL;
     }
+}
+
+int fall_detector_moved_since_fall(void) {
+	return moved_since_fall;
 }
 
 const char* fall_state_name(fall_state_t s) {
@@ -30,6 +37,7 @@ const char* fall_state_name(fall_state_t s) {
 	    case STATE_SUSPECT:    return "SUSPECT";
 	    case STATE_CONFIRMING: return "CONFIRMING";
 	    case STATE_FALL:       return "FALL";
+	    case STATE_LONG_LIE:   return "LONG_LIE";
 	    default:               return "?";
 	}
 }
@@ -65,12 +73,24 @@ fall_state_t fall_detector_update(const motion_features_t *f, unsigned int now_m
 		// after 2 s the person must be lying still -> fall, 3 s passed -> got up
 		if (passed_time >= CONFIRM_STILL_MS && f->tilt_deg > LYING_TILT_DEG && f->still) {
 			jump(STATE_FALL, now_ms);
+			moved_since_fall = 0;
 		} else if (passed_time > CONFIRM_TIMEOUT_MS) {
 			jump(STATE_NORMAL, now_ms);
 		}
 		break;
 
 	case STATE_FALL:
+		// remember if the person moved at all, even without pressing the button
+		if (!f->still) {
+			moved_since_fall = 1;
+		}
+		// nobody pressed the button for 30 s -> long lie, escalate
+		if (passed_time >= LONG_LIE_MS) {
+			jump(STATE_LONG_LIE, now_ms);
+		}
+		break;
+
+	case STATE_LONG_LIE:
 		// stay here until button ack
 		break;
 	}

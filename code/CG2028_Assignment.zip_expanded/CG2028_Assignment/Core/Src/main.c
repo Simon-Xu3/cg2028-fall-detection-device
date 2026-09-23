@@ -48,6 +48,7 @@ int main(void)
 
     motion_features_t features = {0};
     fall_state_t state = STATE_NORMAL;
+    fall_state_t last_state = STATE_NORMAL;
 
     unsigned int last_sample_time = HAL_GetTick();
     unsigned int last_print_time = HAL_GetTick();
@@ -73,11 +74,30 @@ int main(void)
 
             sensor_processing_update(accel_mg, gyro_dps, &features);
             state = fall_detector_update(&features, now);
+
+            /* One ALERT line the moment a fall is confirmed or escalates.
+             * moved=0 on LONG_LIE means no button and no movement for 30 s. */
+            if (state != last_state)
+            {
+                if (state == STATE_FALL || state == STATE_LONG_LIE)
+                {
+                    char alert[48];
+                    snprintf(alert, sizeof(alert), "ALERT,%s,%u,moved=%d\r\n",
+                             fall_state_name(state), now,
+                             fall_detector_moved_since_fall());
+                    UART_Send(alert);
+                }
+                last_state = state;
+            }
         }
 
-        /* Button press clears a confirmed fall. */
+        /* Button press clears a confirmed fall or long lie. */
         if (status_indicator_button_pressed())
         {
+            if (state == STATE_FALL || state == STATE_LONG_LIE)
+            {
+                UART_Send("ALERT,ACK\r\n");
+            }
             fall_detector_ack();
         }
 

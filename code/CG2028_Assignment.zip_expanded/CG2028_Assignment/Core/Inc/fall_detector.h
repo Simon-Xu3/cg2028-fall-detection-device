@@ -7,7 +7,8 @@ typedef enum {
     STATE_NORMAL,        /* LED slow blink */
     STATE_SUSPECT,       /* free-fall or impact seen, waiting for rotation */
     STATE_CONFIRMING,    /* impact + rotation seen, checking for stillness */
-    STATE_FALL           /* confirmed, LED on until acknowledged */
+    STATE_FALL,          /* confirmed, LED fast until acknowledged */
+    STATE_LONG_LIE       /* FALL with no button press for LONG_LIE_MS, escalate */
 } fall_state_t;
 
 void fall_detector_init(void);
@@ -17,6 +18,10 @@ fall_state_t fall_detector_update(const motion_features_t *f, unsigned int now_m
 
 /* USER button pressed: go back to STATE_NORMAL. */
 void fall_detector_ack(void);
+
+/* 1 if the wearer moved at any time since the fall was confirmed.
+ * 0 in LONG_LIE means no response and no movement for 30 s. */
+int fall_detector_moved_since_fall(void);
 
 /* "NORMAL", "SUSPECT", ... for the UART output. */
 const char *fall_state_name(fall_state_t s);
