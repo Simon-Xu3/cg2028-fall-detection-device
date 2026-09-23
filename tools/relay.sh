@@ -23,6 +23,8 @@ exec 3<>"$PORT"
 stty -f "$PORT" 115200 raw
 
 cat <&3 | grep --line-buffered '^ALERT' | while IFS=, read -r _ event tick moved; do
+    event=${event%$'\r'}      # the board ends lines with \r\n, drop the \r
+    moved=${moved%$'\r'}
     case "$event" in
         FALL)     send "FALL DETECTED. The wearer has not pressed OK yet." ;;
         LONG_LIE) if [ "$moved" = "moved=0" ]; then
