@@ -27,3 +27,6 @@
 
 # Future private configuration
 **/Core/Inc/secrets.h
+
+# Telegram bot token and chat id
+/tools/secrets.py
