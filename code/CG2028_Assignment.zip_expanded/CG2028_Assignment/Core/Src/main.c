@@ -13,6 +13,7 @@
 #include "sensor_processing.h"
 #include "fall_detector.h"
 #include "status_indicator.h"
+#include "buzzer.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -41,10 +42,11 @@ int main(void)
     SENSOR_IO_Write(LSM6DSL_ACC_GYRO_I2C_ADDRESS_HIGH, LSM6DSL_ACC_GYRO_CTRL1_XL, 0x38);
     BSP_GYRO_Init();
 
-    /* Clean 3 modules: EWMA -> old val; State: NORMAL; LED clean */
+    /* Clean 4 modules: EWMA -> old val; State: NORMAL; LED clean; buzzer off */
     sensor_processing_init();
     fall_detector_init();
     status_indicator_init();    /* LED2 + user button */
+    buzzer_init();               /* Grove buzzer SIG on PB1, off */
 
     motion_features_t features = {0};
     fall_state_t state = STATE_NORMAL;
@@ -87,6 +89,16 @@ int main(void)
                              fall_detector_moved_since_fall());
                     UART_Send(alert);
                 }
+
+                /* Grove buzzer: SOS in FALL, faster SOS once it escalates. */
+                if (state == STATE_FALL)
+                {
+                    buzzer_set(BUZZER_SOS);
+                }
+                else if (state == STATE_LONG_LIE)
+                {
+                    buzzer_set(BUZZER_SOS_FAST);
+                }
                 last_state = state;
             }
         }
@@ -97,12 +109,16 @@ int main(void)
             if (state == STATE_FALL || state == STATE_LONG_LIE)
             {
                 UART_Send("ALERT,ACK\r\n");
+                buzzer_set(BUZZER_CHIRP);   /* one chirp confirms the ack */
             }
             fall_detector_ack();
         }
 
         /* Slow blink normally, fast blink after a fall. Never blocks. */
         status_indicator_update(state, now);
+
+        /* Advances the buzzer pattern by timestamp. Never blocks. */
+        buzzer_update(now);
 
         /* Every 500 ms: one CSV line, plus a warning if asm and C ever disagreed. */
         if (now - last_print_time >= PRINT_MS)
