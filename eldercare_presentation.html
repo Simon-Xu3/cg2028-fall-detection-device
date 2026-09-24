@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ElderCare Band | CG2028 Presentation</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #5b6770;
+      --navy: #1b3a6b;
+      --line: #c9d1da;
+      --panel: #f3f5f8;
+      --red: #b71c1c;
+      --orange: #c65911;
+      --green: #2e7d32;
+      --mark: #fff3b0;
+      --sans: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #d9dde3; color: var(--ink); font-family: var(--sans); }
+    body { display: grid; grid-template-columns: minmax(0, 1fr) 0; transition: grid-template-columns 180ms ease; }
+    body.notes-open { grid-template-columns: minmax(0, 1fr) 430px; }
+    #viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+    #stage { position: absolute; left: 50%; top: 50%; width: 1600px; height: 900px; transform-origin: center center; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+
+    .slide { position: absolute; inset: 0; display: none; overflow: hidden; padding: 56px 80px 70px; background: #fff; }
+    .slide.active { display: block; }
+    .slide::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 14px; background: var(--navy); }
+    .footer { position: absolute; left: 80px; right: 80px; bottom: 22px; display: flex; justify-content: space-between; color: var(--muted); font-size: 15px; }
+
+    h1, h2, h3, p, ul, table { margin-top: 0; }
+    h1 { font-size: 64px; line-height: 1.1; color: var(--navy); margin: 130px 0 18px; }
+    h2 { font-size: 38px; line-height: 1.2; color: var(--navy); font-weight: 700; padding-bottom: 12px; margin-bottom: 26px; border-bottom: 3px solid var(--navy); }
+    h3 { font-size: 24px; margin-bottom: 10px; color: var(--navy); }
+    p, li, td, th { font-size: 22px; line-height: 1.4; }
+    ul { padding-left: 28px; margin-bottom: 14px; }
+    li { margin-bottom: 8px; }
+    .small, .small li, .small p, .small td, .small th { font-size: 19px; }
+    .muted { color: var(--muted); }
+    .red { color: var(--red); }
+    .green { color: var(--green); }
+    .orange { color: var(--orange); }
+    .navy { color: var(--navy); }
+    .mono { font-family: var(--mono); }
+    .mark { background: var(--mark); padding: 0 6px; }
+    .subtitle { font-size: 30px; color: var(--muted); max-width: 1200px; }
+    .names { margin-top: 60px; font-size: 26px; }
+    .names span { margin-right: 40px; }
+
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: start; }
+    .cols-64 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 44px; align-items: start; }
+    .cols-46 { display: grid; grid-template-columns: .85fr 1.15fr; gap: 44px; align-items: start; }
+
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 7px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--panel); font-weight: 700; color: var(--navy); }
+    table.data td, table.data th { font-family: var(--mono); font-size: 18px; padding: 4px 10px; white-space: nowrap; }
+    td.NORMAL { color: var(--muted); }
+    td.SUSPECT { color: var(--orange); font-weight: 700; }
+    td.CONFIRMING { color: var(--navy); font-weight: 700; }
+    td.FALL { color: var(--red); font-weight: 700; }
+    td.LONG_LIE { color: var(--orange); font-weight: 700; }
+    tr.hl td { background: #fff8e1; }
+
+    .box { border: 1px solid var(--line); background: var(--panel); padding: 16px 20px; margin-bottom: 16px; }
+    .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+    pre.code { margin: 0 0 16px; padding: 16px 20px; background: #f7f8fa; border: 1px solid var(--line); font: 19px/1.5 var(--mono); }
+    .eq { font: 30px/1.4 var(--mono); padding: 18px 22px; border: 1px solid var(--line); background: var(--panel); margin-bottom: 18px; }
+    .fig { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); }
+    .cap { margin-top: 10px; font-size: 19px; color: var(--muted); }
+
+    .pipeline { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr 40px 1fr; align-items: stretch; margin: 10px 0 24px; }
+    .pipe { border: 2px solid var(--navy); padding: 16px 16px; }
+    .pipe h3 { margin-bottom: 8px; }
+    .pipe p { margin: 0 0 4px; font-size: 20px; }
+    .pipe .file { margin-top: 10px; font: 16px var(--mono); color: var(--muted); }
+    .arrow { display: flex; align-items: center; justify-content: center; font-size: 34px; color: var(--navy); }
+
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .step { border: 1px solid var(--line); padding: 14px 16px; min-height: 225px; }
+    .step b { display: block; font-size: 22px; margin-bottom: 6px; color: var(--navy); }
+    .step p { font-size: 19px; margin: 0; }
+    .who { display: inline-block; margin-left: 6px; padding: 0 8px; border: 1px solid var(--navy); border-radius: 4px; font-size: 15px; color: var(--navy); vertical-align: middle; }
+
+    .sm { display: block; width: 100%; }
+    .sm text { font-family: var(--sans); fill: var(--ink); }
+    .sm .name { font-size: 26px; font-weight: 700; }
+    .sm .cond { font-size: 17px; }
+    .sm .out { font-size: 15px; fill: var(--muted); }
+    .sm .ret { font-size: 17px; font-weight: 700; }
+
+    .speaker-notes { display: none; }
+    #notes-panel { display: none; overflow: auto; padding: 28px 26px 80px; border-left: 1px solid #bbb; background: #f7f8fa; color: var(--ink); }
+    body.notes-open #notes-panel { display: block; }
+    #notes-panel h3 { margin-bottom: 14px; font-size: 20px; }
+    #notes-panel .time { display: inline-block; margin-bottom: 12px; padding: 2px 8px; background: var(--mark); font-size: 15px; }
+    #notes-panel p { font-size: 18px; line-height: 1.55; }
+    #hud { position: fixed; left: 24px; right: 24px; bottom: 12px; z-index: 100; display: flex; align-items: center; gap: 16px; color: #666; font-size: 12px; pointer-events: none; }
+    #progress { flex: 1; height: 2px; background: #bbb; }
+    #progress > div { height: 100%; background: var(--navy); }
+    :fullscreen #hud { display: none; }
+    @media print { #notes-panel, #hud { display: none !important; } }
+  </style>
+</head>
+<body>
+  <main id="viewport">
+    <div id="stage">
+
+      <!-- 01 TITLE (A) -->
+      <section class="slide active" data-title="Title">
+        <h1>ElderCare Band</h1>
+        <p class="subtitle">A wearable fall detector on the STM32 B-L4S5I-IOT01A: EWMA in assembly, a five-state detector, SOS buzzer, Telegram alert and long-lie escalation</p>
+        <div class="names">
+          <span>Xu Ruijie · A0334914A</span>
+          <span>Lyu Jinhan · A0330854E</span>
+          <span class="mark">Group [fill in]</span>
+        </div>
+        <p class="muted" style="margin-top:40px">CG2028 Computer Organization · Assignment 1 · September 2026</p>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>1</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:20 · Xu Ruijie</span>
+          <p>大家好，我们的项目是 ElderCare Band，跑在 STM32L4S5 Discovery board 上。它做三件事：分清真实跌倒和日常动作，跌倒后在旁边报警，30 秒没人按键就升级并通知照护者。</p>
+          <p>上台前把 Group 编号填上。</p>
+        </aside>
+      </section>
+
+      <!-- 02 USER NEED + REQUIREMENTS (A) -->
+      <section class="slide" data-title="User need">
+        <h2>User need and requirements</h2>
+        <div class="cols">
+          <div>
+            <h3>Why a fall band</h3>
+            <ul>
+              <li>About one in four adults over 65 falls each year (CDC).</li>
+              <li>The danger is not the fall itself but lying alone afterwards for hours.</li>
+              <li>So the band must: notice the fall, alarm nearby, and escalate if nobody responds.</li>
+            </ul>
+            <h3>Hardware</h3>
+            <ul class="small">
+              <li>B-L4S5I-IOT01A, Cortex-M4 at 80 MHz</li>
+              <li>LSM6DSL accelerometer + gyroscope (on board, I²C)</li>
+              <li>LED2, user button, UART1 at 115200</li>
+              <li>Grove buzzer on D6 (only add-on)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Assignment requirements</h3>
+            <table>
+              <tr><th>#</th><th>Requirement</th><th>Where</th></tr>
+              <tr><td>1</td><td>Filter all six axes with an EWMA written in ARM assembly, one recursive state per axis</td><td>mov_avg.s</td></tr>
+              <tr><td>2</td><td>Use both accelerometer and gyroscope in the decision</td><td>fall_detector.c</td></tr>
+              <tr><td>3</td><td>Reject near falls: sitting, bending, carrying, shaking, slow lowering</td><td>state machine</td></tr>
+              <tr><td>4</td><td>Slow LED normally, fast LED after a fall, stable until acknowledged</td><td>status_indicator.c</td></tr>
+            </table>
+            <img class="fig" src="evidence/figures/board_with_buzzer.jpg" alt="Board with Grove buzzer" style="max-height:230px;margin-top:16px" onerror="this.style.display='none'">
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>2</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:30 · Xu Ruijie</span>
+          <p>先说需求。老人跌倒本身未必致命，危险的是倒地后长时间没人发现。所以手环要做到：发现跌倒、就地报警、没人响应就升级。</p>
+          <p>作业的四个硬性要求：六个轴都过汇编 EWMA；加速度计和陀螺仪都要参与判断；坐下、弯腰、携带、轻摇不能误报；确认跌倒后状态要稳定保持，LED 要对应。</p>
+        </aside>
+      </section>
+
+      <!-- 03 ARCHITECTURE (A) -->
+      <section class="slide" data-title="Architecture">
+        <h2>System architecture and data flow</h2>
+        <div class="pipeline">
+          <div class="pipe"><h3>1. Sensors</h3><p>accel X/Y/Z (mg)</p><p>gyro X/Y/Z (dps)</p><p>read every 20 ms</p><div class="file">main.c</div></div>
+          <div class="arrow">→</div>
+          <div class="pipe"><h3>2. EWMA (asm)</h3><p>6 calls per sample</p><p>6 separate old outputs</p><p>α = 25 %</p><div class="file">mov_avg.s</div></div>
+          <div class="arrow">→</div>
+          <div class="pipe"><h3>3. Features</h3><p>|acc| in mg</p><p>|gyro| in dps</p><p>tilt in degrees, still flag</p><div class="file">sensor_processing.c</div></div>
+          <div class="arrow">→</div>
+          <div class="pipe"><h3>4. State machine</h3><p>NORMAL → SUSPECT →</p><p>CONFIRMING → FALL →</p><p>LONG_LIE</p><div class="file">fall_detector.c</div></div>
+          <div class="arrow">→</div>
+          <div class="pipe"><h3>5. Outputs</h3><p>LED2, buzzer</p><p>UART CSV + ALERT line</p><p>laptop → Telegram</p><div class="file">status_indicator.c, buzzer.c, tools/relay.py</div></div>
+        </div>
+        <ul>
+          <li>Recursive state: <span class="mono">accel_asm_old[3]</span> and <span class="mono">gyro_asm_old[3]</span>, one entry per axis, updated after every call.</li>
+          <li>A C reference filter with its own <span class="mono">accel_c_old[3]</span> runs beside the assembly and is compared every sample. Only the assembly output goes forward.</li>
+          <li>Data flows one way. The outputs only read the state; nothing writes back into the detector.</li>
+        </ul>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>3</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:45 · Xu Ruijie</span>
+          <p>这是完整数据流。LSM6DSL 每 20 毫秒给三轴加速度和三轴角速度。汇编 EWMA 每个周期调用六次，每个轴有自己的 old output，存在两个长度为 3 的数组里。过滤后压成四个有物理意义的特征，交给五状态检测器，最后输出到 LED、蜂鸣器、串口和 Telegram。</p>
+          <p>两点要强调：进入检测器的只有汇编的输出，C 版本只做逐轴验证；数据是单向的，enhancement 只读状态，不会写回检测器。</p>
+        </aside>
+      </section>
+
+      <!-- 04 EWMA DESIGN (A) -->
+      <section class="slide" data-title="EWMA design">
+        <h2>Filter design: EWMA</h2>
+        <div class="cols">
+          <div>
+            <div class="eq">y[n] = (α·x[n] + (100 − α)·y[n−1]) / 100</div>
+            <ul>
+              <li>Signed integer arithmetic, α given as a percentage (25).</li>
+              <li>Division truncates toward zero, the same as C.</li>
+              <li>Only the previous output is stored: no sample buffer.</li>
+              <li>Time constant ≈ 1/α = 4 samples = 80 ms at 50 Hz. Desk jitter is smoothed; an impact of 100 to 200 ms still comes through.</li>
+              <li>Larger α: more noise passes. Smaller α: the impact is blurred.</li>
+            </ul>
+          </div>
+          <div>
+            <img class="fig" src="evidence/figures/fig5_ewma_testcase.png" alt="Open test case 1 through the EWMA">
+            <p class="cap">Open test case 1 is a step from 0 to 1000. After 4 samples the output is 684, about two thirds of the way; it reaches 1000 by sample 15 with no overshoot.</p>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>4</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:40 · Xu Ruijie</span>
+          <p>EWMA 只需要上一次的输出，不需要 buffer。公式就是 alpha 乘新值加 100 减 alpha 乘旧值再除以 100，全部整数运算。我们用 alpha 25，时间常数大约 4 个样本、80 毫秒：静止时的抖动被压掉，但一两百毫秒的冲击仍然能过来。alpha 太大噪声过多，太小冲击会被抹平。</p>
+          <p>右图是 open test case 1，输入是 0 到 1000 的阶跃。4 个样本后输出到 684，大约三分之二，这就是时间常数的意思；到第 15 个样本接近 1000，没有过冲。</p>
+        </aside>
+      </section>
+
+      <!-- 05 ASSEMBLY PROOF (A) -->
+      <section class="slide" data-title="Assembly verification">
+        <h2>Assembly implementation and verification</h2>
+        <div class="cols">
+          <div>
+<pre class="code">ewma_filter:
+    PUSH {r4-r7, lr}
+    MOVS r3, #100
+    MUL  r4, r0, r2        @ alpha * new
+    SUB  r5, r3, r2        @ 100 - alpha
+    MUL  r6, r5, r1        @ (100 - alpha) * old
+    ADD  r7, r4, r6
+    SDIV r0, r7, r3        @ signed, truncates to zero
+    POP  {r4-r7, pc}</pre>
+            <table class="small">
+              <tr><th>Register</th><th>Use</th></tr>
+              <tr><td>r0, r1, r2</td><td>new_data, old_output, alpha in; r0 = result out</td></tr>
+              <tr><td>r3</td><td>constant 100 (scratch, no need to save)</td></tr>
+              <tr><td>r4–r7</td><td>callee-saved: PUSH on entry, POP on exit</td></tr>
+              <tr><td>r8–r11, FPU</td><td>not used; no C helper called</td></tr>
+            </table>
+          </div>
+          <div>
+            <!-- Replace with a real screenshot of the test project console: evidence/figures/test_console_all5_passed.png -->
+            <img class="fig" src="evidence/figures/test_console_all5_passed.png" alt="Test project console" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <pre class="code" style="display:none">Open test case 1 (alpha = 25%): PASSED
+Open test case 2 (alpha = 50%): PASSED
+Open test case 3 (alpha = 10%): PASSED
+Open test case 4 (alpha = 75%): PASSED
+Open test case 5 (alpha = 33%): PASSED
+
+ALL 5 OPEN TEST CASES PASSED</pre>
+            <ul class="small">
+              <li>Test project: 5 cases × 16 samples × 3 axes = 240 outputs, all equal to the C reference.</li>
+              <li>Main firmware: assembly and C compared on every axis, every 20 ms. A WARNING line is printed if they ever differ. It never appeared in any board log.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>5</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:45 · Xu Ruijie</span>
+          <p>函数按 ARM calling convention：r0、r1、r2 收 new data、old output、alpha，结果放回 r0。r3 只放常数 100，是 scratch 寄存器不用保存。我们用了 r4 到 r7，所以进函数 PUSH、出函数 POP；r8 到 r11 和浮点都没碰，也没有调用任何 C helper。</p>
+          <p>SDIV 是有符号除法，向零截断，和 C 的整数除法一样，负数输入也不会出错。测试工程五个 alpha、每组 16 个样本、三个轴，一共 240 个输出全部和 C 一致。固件里每次采样也把汇编和 C 的结果逐轴比较，不一致才会打印 WARNING，所有板上日志里从来没出现过这一行。</p>
+        </aside>
+      </section>
+
+      <!-- 06 SENSOR FEATURES (A) -->
+      <section class="slide" data-title="Sensor features">
+        <h2>Sensor processing: four features in physical units</h2>
+        <table>
+          <tr><th>Feature</th><th>How it is computed</th><th>Unit</th><th>Typical values</th></tr>
+          <tr><td><b>acc_mg</b></td><td>√(x² + y² + z²) of the three filtered accelerometer axes</td><td>mg</td><td>≈ 1000 at rest · &lt; 500 in free fall · &gt; 2000 on impact</td></tr>
+          <tr><td><b>gyro_dps</b></td><td>√(x² + y² + z²) of the three filtered gyroscope axes</td><td>degrees / s</td><td>≈ 0 at rest · hundreds when the body rotates</td></tr>
+          <tr><td><b>tilt_deg</b></td><td>atan2(horizontal, z): angle between the band's Z axis and vertical</td><td>degrees, 0 to 180</td><td>≈ 0 flat · ≈ 90 on its side · &gt; 90 face-down</td></tr>
+          <tr><td><b>still</b></td><td>|acc_mg − 1000| ≤ 120 and gyro_dps ≤ 15</td><td>0 / 1</td><td>1 only when the band is resting</td></tr>
+        </table>
+        <div class="box" style="margin-top:24px">
+          <p><b>Sensor settings.</b> Accelerometer full scale changed from ±2 g to ±4 g (CTRL1_XL = 0x38) so a 2 g impact does not clip. Sensor rate 52 Hz, processing every 20 ms. UART prints <span class="mono">state,acc_mg,gyro_dps,tilt_deg,still</span> every 500 ms.</p>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>6</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:35 · Xu Ruijie</span>
+          <p>六轴滤波后压成四个特征。幅值不受板子水平朝向影响，静止约 1000 mg；角速度幅值看有没有转动；倾角是相对 Z 轴的角度，0 到 180 度，平放接近 0，侧躺约 90；still 同时要求加速度接近 1 g 且角速度很小。</p>
+          <p>加速度计量程从正负 2 g 改成正负 4 g，因为冲击门槛是 2 g，量程只有 2 g 会削顶。传感器 52 Hz，主循环每 20 毫秒读一次，串口每 500 毫秒打印一行。</p>
+        </aside>
+      </section>
+
+      <!-- 07 STATE MACHINE (B) -->
+      <section class="slide" data-title="State machine">
+        <h2>Fall detection: five states, three ordered gates</h2>
+        <svg class="sm" viewBox="0 0 1440 335" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Five-state fall detector">
+          <defs>
+            <marker id="ah-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1b3a6b"/></marker>
+            <marker id="ah-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c65911"/></marker>
+            <marker id="ah-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e7d32"/></marker>
+          </defs>
+          <g>
+            <rect x="1" y="20" width="232" height="140" fill="#fff" stroke="#1b3a6b" stroke-width="2"/>
+            <text class="name" x="117" y="58" text-anchor="middle">NORMAL</text>
+            <text class="cond" x="117" y="88" text-anchor="middle">watch every 20 ms</text>
+            <text class="out" x="117" y="114" text-anchor="middle">LED slow blink</text>
+            <text class="out" x="117" y="136" text-anchor="middle">buzzer off</text>
+          </g>
+          <g>
+            <rect x="303" y="20" width="232" height="140" fill="#fff" stroke="#1b3a6b" stroke-width="2"/>
+            <text class="name" x="419" y="58" text-anchor="middle">SUSPECT</text>
+            <text class="cond" x="419" y="88" text-anchor="middle">acc &lt; 500 mg (free fall)</text>
+            <text class="cond" x="419" y="112" text-anchor="middle">or acc &gt; 2000 mg (impact)</text>
+            <text class="out" x="419" y="136" text-anchor="middle">gate 1: sudden acceleration</text>
+          </g>
+          <g>
+            <rect x="605" y="20" width="232" height="140" fill="#fff" stroke="#1b3a6b" stroke-width="2"/>
+            <text class="name" x="721" y="58" text-anchor="middle">CONFIRMING</text>
+            <text class="cond" x="721" y="88" text-anchor="middle">gyro &gt; 200 dps within 1 s</text>
+            <text class="cond" x="721" y="112" text-anchor="middle">then wait at least 2 s</text>
+            <text class="out" x="721" y="136" text-anchor="middle">gate 2: rapid rotation</text>
+          </g>
+          <g>
+            <rect x="907" y="20" width="232" height="140" fill="#fff" stroke="#b71c1c" stroke-width="3"/>
+            <text class="name" x="1023" y="58" text-anchor="middle" fill="#b71c1c">FALL</text>
+            <text class="cond" x="1023" y="88" text-anchor="middle">tilt &gt; 60° and still</text>
+            <text class="cond" x="1023" y="112" text-anchor="middle">latched until the button</text>
+            <text class="out" x="1023" y="136" text-anchor="middle">gate 3: LED fast, SOS, ALERT line</text>
+          </g>
+          <g>
+            <rect x="1209" y="20" width="230" height="140" fill="#fff" stroke="#c65911" stroke-width="3"/>
+            <text class="name" x="1324" y="58" text-anchor="middle" fill="#c65911">LONG_LIE</text>
+            <text class="cond" x="1324" y="88" text-anchor="middle">30 s with no button</text>
+            <text class="cond" x="1324" y="112" text-anchor="middle">moved = 0 or 1</text>
+            <text class="out" x="1324" y="136" text-anchor="middle">fast SOS, second ALERT line</text>
+          </g>
+          <line x1="235" y1="90" x2="300" y2="90" stroke="#1b3a6b" stroke-width="3" marker-end="url(#ah-navy)"/>
+          <line x1="537" y1="90" x2="602" y2="90" stroke="#1b3a6b" stroke-width="3" marker-end="url(#ah-navy)"/>
+          <line x1="839" y1="90" x2="904" y2="90" stroke="#1b3a6b" stroke-width="3" marker-end="url(#ah-navy)"/>
+          <line x1="1141" y1="90" x2="1206" y2="90" stroke="#c65911" stroke-width="3" marker-end="url(#ah-orange)"/>
+          <path d="M 419 160 V 205 H 76 V 166" fill="none" stroke="#c65911" stroke-width="2.5" marker-end="url(#ah-orange)"/>
+          <text class="ret" x="176" y="198" fill="#c65911">no rotation within 1 s → back to NORMAL (near fall, no alarm)</text>
+          <path d="M 721 160 V 252 H 117 V 166" fill="none" stroke="#c65911" stroke-width="2.5" marker-end="url(#ah-orange)"/>
+          <text class="ret" x="176" y="245" fill="#c65911">not lying still within 5 s → back to NORMAL (near fall, no alarm)</text>
+          <path d="M 1324 160 V 299 H 158 V 166" fill="none" stroke="#2e7d32" stroke-width="2.5" marker-end="url(#ah-green)"/>
+          <path d="M 1023 160 V 299" fill="none" stroke="#2e7d32" stroke-width="2.5"/>
+          <text class="ret" x="176" y="292" fill="#2e7d32">user button pressed → acknowledged: chirp, ALERT,ACK, back to NORMAL</text>
+        </svg>
+        <table class="small" style="margin-top:18px">
+          <tr><th>Impact → FALL</th><th>FALL → LED, buzzer, UART</th><th>UART → phone</th><th>Stability</th></tr>
+          <tr><td>≈ 3.5 s (2 s of it is the deliberate wait)</td><td>&lt; 20 ms, same loop pass</td><td>≈ 1 s via the laptop relay</td><td>FALL is latched, so it never flickers · 300 ms debounce on the moved flag · button edge-detected · all thresholds are #defines</td></tr>
+        </table>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>7</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:50 · Lyu Jinhan</span>
+          <p>检测器有五个状态、三道门。NORMAL 里加速度低于 500 或高于 2000 mg 才进 SUSPECT。1 秒内要看到超过 200 dps 的旋转才进 CONFIRMING，否则回 NORMAL。CONFIRMING 至少等 2 秒让动作稳定，然后要求倾角大于 60 度并且 still，才进 FALL；5 秒内没躺稳也回 NORMAL。这两条橙色的回路就是 near fall，不报警。</p>
+          <p>FALL 是锁存的，只有蓝色按钮能清掉，所以不会闪烁。30 秒没按就升级 LONG_LIE。从冲击到 FALL 大约 3.5 秒，其中 2 秒是故意等的；FALL 到 LED、蜂鸣器、串口是同一个循环内，20 毫秒以内；到手机大约 1 秒。</p>
+        </aside>
+      </section>
+
+      <!-- 08 EVIDENCE: REAL FALL (B) -->
+      <section class="slide" data-title="Evidence: real fall">
+        <h2>Board evidence 1: a real fall (20 Sep, board dropped onto a sofa)</h2>
+        <div class="cols">
+          <div>
+            <table class="data">
+              <tr><th>t (s)</th><th>state</th><th>acc_mg</th><th>gyro_dps</th><th>tilt_deg</th><th>still</th></tr>
+              <tr><td>3.8</td><td class="NORMAL">NORMAL</td><td>1058</td><td>0</td><td>2</td><td>1</td></tr>
+              <tr><td>4.3</td><td class="NORMAL">NORMAL</td><td>1059</td><td>0</td><td>3</td><td>1</td></tr>
+              <tr><td>4.8</td><td class="NORMAL">NORMAL</td><td>860</td><td>169</td><td>23</td><td>0</td></tr>
+              <tr class="hl"><td>5.3</td><td class="SUSPECT">SUSPECT</td><td>1686</td><td>114</td><td>23</td><td>0</td></tr>
+              <tr class="hl"><td>5.8</td><td class="CONFIRMING">CONFIRMING</td><td>571</td><td>53</td><td>97</td><td>0</td></tr>
+              <tr><td>6.3</td><td class="CONFIRMING">CONFIRMING</td><td>1920</td><td>127</td><td>31</td><td>0</td></tr>
+              <tr><td>6.8</td><td class="CONFIRMING">CONFIRMING</td><td>666</td><td>103</td><td>57</td><td>0</td></tr>
+              <tr><td>7.3</td><td class="CONFIRMING">CONFIRMING</td><td>1291</td><td>143</td><td>27</td><td>0</td></tr>
+              <tr><td>7.8</td><td class="CONFIRMING">CONFIRMING</td><td>1321</td><td>78</td><td>44</td><td>0</td></tr>
+              <tr><td>8.3</td><td class="CONFIRMING">CONFIRMING</td><td>1119</td><td>41</td><td>86</td><td>0</td></tr>
+              <tr class="hl"><td>8.8</td><td class="FALL">FALL</td><td>1008</td><td>12</td><td>89</td><td>1</td></tr>
+              <tr><td>9.3</td><td class="FALL">FALL</td><td>1008</td><td>2</td><td>86</td><td>1</td></tr>
+              <tr><td>9.8</td><td class="FALL">FALL</td><td>1008</td><td>0</td><td>86</td><td>1</td></tr>
+            </table>
+            <p class="cap">Rows straight from <span class="mono">evidence/2026-09-20_real_fall.csv</span>, one row per 500 ms.</p>
+          </div>
+          <div>
+            <img class="fig" src="evidence/figures/fig1_real_fall.png" alt="acc, gyro and tilt during the real fall">
+            <ul class="small" style="margin-top:14px">
+              <li><b>5.3 s</b> acc jumps (1686 printed; the &gt; 2000 sample lies between two printed rows) → SUSPECT.</li>
+              <li><b>5.8 s</b> rotation seen within 1 s → CONFIRMING, board flips (tilt 97°).</li>
+              <li><b>8.8 s</b> lying on its side (89°) and still → FALL, LED fast, SOS, ALERT line. Stays FALL.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>8</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:45 · Lyu Jinhan</span>
+          <p>左边是那次真实摔沙发的串口原始行，每 500 毫秒一行。讲的时候顺着黄色三行念：5.3 秒加速度冲到 1686，进 SUSPECT；5.8 秒之前有超过 200 的旋转，进 CONFIRMING，倾角 97 说明板子翻了；8.8 秒倾角 89 度、still 变 1，进 FALL，之后一直是 FALL。</p>
+          <p>右图就是这三列画成线：上面加速度、中间角速度、下面倾角，红虚线是阈值。有人问打印的 1686 没到 2000：串口每 500 毫秒才打印一行，检测每 20 毫秒一次，真正超过 2000 的样本在两行之间。</p>
+        </aside>
+      </section>
+
+      <!-- 09 EVIDENCE: NEAR FALL (A) -->
+      <section class="slide" data-title="Evidence: near fall">
+        <h2>Board evidence 2: lying down slowly is not a fall (24 Sep)</h2>
+        <div class="cols">
+          <div>
+            <table class="data">
+              <tr><th>t (s)</th><th>state</th><th>acc_mg</th><th>gyro_dps</th><th>tilt_deg</th><th>still</th></tr>
+              <tr><td>49.4</td><td class="NORMAL">NORMAL</td><td>1219</td><td>64</td><td>32</td><td>0</td></tr>
+              <tr><td>49.9</td><td class="NORMAL">NORMAL</td><td>1010</td><td>41</td><td>53</td><td>0</td></tr>
+              <tr><td>50.4</td><td class="NORMAL">NORMAL</td><td>971</td><td>37</td><td>79</td><td>0</td></tr>
+              <tr><td>50.9</td><td class="NORMAL">NORMAL</td><td>710</td><td>75</td><td>99</td><td>0</td></tr>
+              <tr class="hl"><td>51.4</td><td class="NORMAL">NORMAL</td><td>1179</td><td>43</td><td>131</td><td>0</td></tr>
+              <tr><td>51.9</td><td class="NORMAL">NORMAL</td><td>1242</td><td>76</td><td>130</td><td>0</td></tr>
+              <tr><td>52.4</td><td class="NORMAL">NORMAL</td><td>687</td><td>140</td><td>83</td><td>0</td></tr>
+              <tr><td>52.9</td><td class="NORMAL">NORMAL</td><td>1001</td><td>5</td><td>60</td><td>1</td></tr>
+              <tr><td>53.4</td><td class="NORMAL">NORMAL</td><td>911</td><td>44</td><td>72</td><td>0</td></tr>
+              <tr><td>53.9</td><td class="NORMAL">NORMAL</td><td>1049</td><td>59</td><td>111</td><td>0</td></tr>
+              <tr><td>54.4</td><td class="NORMAL">NORMAL</td><td>1256</td><td>33</td><td>117</td><td>0</td></tr>
+            </table>
+            <p class="cap">Rows from <span class="mono">evidence/2026-09-24_near_fall_sit_bend_lie_down.csv</span>, slow lie-down on a sofa.</p>
+          </div>
+          <div>
+            <img class="fig" src="evidence/figures/fig2_fall_vs_liedown.png" alt="Real fall and slow lie-down, same three quantities">
+            <ul class="small" style="margin-top:14px">
+              <li>Tilt reaches <b>131°</b>, more than the real fall (89°).</li>
+              <li>But acc stays between 687 and 1256 mg: never above 2000, never below 500. Gate 1 never opens, so the state never leaves NORMAL.</li>
+              <li>Rejected because there was no impact first, not because of the angle.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>9</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:30 · Xu Ruijie</span>
+          <p>左边是慢慢躺到沙发上的原始行。看倾角那一列：51.4 秒到了 131 度，比真实跌倒的 89 度还大。再看加速度那一列：最低 687，最高 1256，从来没超过 2000，也没低于 500。所以第一道门没开，状态全程 NORMAL。</p>
+          <p>右图左半是跌倒、右半是躺下，三个量并排比。一句话：摔倒先要有冲击，躺下没有冲击，所以不是摔倒。</p>
+        </aside>
+      </section>
+
+      <!-- 10 EVIDENCE: DAILY ACTIONS (A) -->
+      <section class="slide" data-title="Evidence: daily actions">
+        <h2>Board evidence 3: daily actions, 723 rows, zero false alarms (24 Sep)</h2>
+        <div class="cols-64">
+          <div>
+            <table>
+              <tr><th>Recording</th><th>Rows</th><th>NORMAL</th><th>SUSPECT</th><th>FALL</th><th>max acc</th><th>max gyro</th><th>max tilt</th></tr>
+              <tr><td>Walk, pocket, carry, turn</td><td>241</td><td>235</td><td class="orange"><b>6</b></td><td class="green"><b>0</b></td><td>1407 mg</td><td>94 dps</td><td>26°</td></tr>
+              <tr><td>Flip 360°, shake, pick up</td><td>181</td><td>181</td><td>0</td><td class="green"><b>0</b></td><td>1308 mg</td><td>252 dps</td><td>167°</td></tr>
+              <tr><td>Sit hard, bend, lie down, squat</td><td>301</td><td>301</td><td>0</td><td class="green"><b>0</b></td><td>1540 mg</td><td>178 dps</td><td>131°</td></tr>
+            </table>
+            <ul style="margin-top:20px">
+              <li>Shaking passed 200 dps and flipping reached 167°: gates 2 and 3 alone would have fired. Gate 1 (impact) is what keeps false alarms at zero.</li>
+              <li>Walking produced three short SUSPECT blips; each one timed out after 1 s and went back to NORMAL on its own.</li>
+            </ul>
+          </div>
+          <div>
+            <p class="small" style="margin-bottom:6px"><b>One of the walking blips</b> (rows from the walk log):</p>
+            <table class="data">
+              <tr><th>t (s)</th><th>state</th><th>acc</th><th>gyro</th><th>tilt</th><th>still</th></tr>
+              <tr><td>96.4</td><td class="NORMAL">NORMAL</td><td>958</td><td>80</td><td>7</td><td>0</td></tr>
+              <tr class="hl"><td>96.9</td><td class="SUSPECT">SUSPECT</td><td>1018</td><td>93</td><td>10</td><td>0</td></tr>
+              <tr class="hl"><td>97.5</td><td class="SUSPECT">SUSPECT</td><td>789</td><td>39</td><td>7</td><td>0</td></tr>
+              <tr><td>97.9</td><td class="NORMAL">NORMAL</td><td>764</td><td>24</td><td>8</td><td>0</td></tr>
+            </table>
+            <p class="cap">A step impact opened gate 1, no rotation followed, so after 1 s the detector returned to NORMAL. No LED change, no alarm.</p>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>10</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:25 · Xu Ruijie</span>
+          <p>三段日常动作日志一共 723 行，没有一行 FALL。翻转和摇晃角速度到 252、倾角到 167，都超过了第二、三道门的阈值，但没有冲击在前，连 SUSPECT 都没进，说明真正挡误报的是第一道门。走路有三次不到一秒的 SUSPECT，右边就是其中一次：一步的冲击开了第一道门，没有旋转跟上，1 秒后自己回 NORMAL，LED 和蜂鸣器都没反应。</p>
+        </aside>
+      </section>
+
+      <!-- 11 ENHANCEMENTS (B) -->
+      <section class="slide" data-title="Enhancements">
+        <h2>Enhancements: SOS buzzer, Telegram alert, long-lie escalation</h2>
+        <div class="cols-64">
+          <div>
+            <table class="small">
+              <tr><th>Step</th><th>What happens</th><th>Code</th></tr>
+              <tr><td>1. FALL confirmed</td><td>LED fast blink, buzzer plays Morse SOS, one line <span class="mono">ALERT,FALL,&lt;tick&gt;,moved=0</span> on UART</td><td>main.c, buzzer.c</td></tr>
+              <tr><td>2. Caregiver alert</td><td>Laptop script reads the ALERT line and posts to a Telegram group with the home address</td><td>tools/relay.py</td></tr>
+              <tr><td>3. Escalation</td><td>30 s without the button → LONG_LIE: faster SOS, second message, moved = 0 (no movement at all) or 1 (moved but did not get up)</td><td>fall_detector.c</td></tr>
+              <tr><td>4. Acknowledge</td><td>Blue button: one chirp, <span class="mono">ALERT,ACK</span>, back to NORMAL</td><td>status_indicator.c</td></tr>
+            </table>
+            <p class="small" style="margin:18px 0 6px"><b>Board log, two runs</b> (ticks in ms, from the E1 CSVs):</p>
+            <table class="data">
+              <tr><th>run</th><th>ALERT,FALL</th><th>ALERT,LONG_LIE</th><th>difference</th></tr>
+              <tr><td>untouched</td><td>178141</td><td>208141, moved=0</td><td>30 000 ms</td></tr>
+              <tr><td>nudged once</td><td>16961</td><td>46961, moved=1</td><td>30 000 ms, then ALERT,ACK</td></tr>
+            </table>
+            <ul class="small" style="margin-top:16px">
+              <li>Local first: LED and SOS work with no laptop and no internet. Buzzer patterns use tick comparisons, no HAL_Delay.</li>
+              <li>30 s is a demo value in one #define; a real deployment would wait much longer. No GPS: the address is set on the laptop.</li>
+            </ul>
+          </div>
+          <div>
+            <img class="fig" src="evidence/figures/fig4_telegram_crop.jpg" alt="Telegram group receiving FALL, LONG_LIE and ACK messages" style="max-height:600px;width:auto;margin:0 auto">
+            <p class="cap" style="text-align:center">Run 1: FALL → LONG_LIE, moved = 0 → ACK. Run 2: same with moved = 1.</p>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>11</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:45 · Lyu Jinhan</span>
+          <p>增强功能是一条 alert chain。FALL 一确认，LED 快闪、蜂鸣器放 Morse SOS，固件打印一行 ALERT，电脑上的 relay.py 把它转发到 Telegram 群。30 秒没按键就进 LONG_LIE，再发一条，带 moved 标志：0 表示完全没动，1 表示动过但没起来。按钮确认后 chirp 一声，发 ACK。</p>
+          <p>表里是两次板上记录，FALL 到 LONG_LIE 的 tick 差刚好 30000 毫秒。蜂鸣器和 LED 都是按时间戳比较，没有 HAL_Delay；Telegram 在电脑端，网络断了板子照样报警。30 秒只是演示值，一个宏。</p>
+        </aside>
+      </section>
+
+      <!-- 12 LIVE DEMO (both) -->
+      <section class="slide" data-title="Live demo">
+        <h2>Live demonstration (about 3½ minutes, board dropped on a cushion only)</h2>
+        <div class="steps">
+          <div class="step"><b>1. Filter check <span class="who">A</span></b><p>Run the test project: ALL 5 OPEN TEST CASES PASSED.</p></div>
+          <div class="step"><b>2. Normal <span class="who">A</span></b><p>Board flat: slow LED, UART about 1000 mg, still = 1, no WARNING line.</p></div>
+          <div class="step"><b>3. Daily motion <span class="who">A</span></b><p>Walk with it, carry it, shake lightly, flip it over. Stays NORMAL.</p></div>
+          <div class="step"><b>4. Near fall <span class="who">B</span></b><p>Sit down hard, bend at medium speed, lower it slowly onto the cushion. No alarm.</p></div>
+          <div class="step"><b>5. Fall <span class="who">B</span></b><p>Drop onto the cushion with a twist, leave it on its side: fast LED, SOS, phone message.</p></div>
+          <div class="step"><b>6. Escalate and acknowledge <span class="who">B</span></b><p>Wait 30 s: LONG_LIE, faster SOS, second message. Press the blue button: chirp, NORMAL.</p></div>
+          <div class="step"><b>7. Repeat <span class="who">B</span></b><p>Second fall from a different height and angle, then acknowledge again.</p></div>
+          <div class="step" style="background:var(--panel)"><b>Fallback</b><p>If the phone has no signal, the UART ALERT line, LED and buzzer still show the full firmware behaviour. RESET taped over, USB cable strapped, hotspot on.</p></div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>12</span></div>
+        <aside class="speaker-notes">
+          <span class="time">3:30 · A steps 1–3 (1:15), B steps 4–7 (2:15)</span>
+          <p>A 先跑测试工程给老师看 PASSED，这是滤波的证明。然后板子平放，指出串口约 1000 mg、still 等于 1、LED 慢闪、没有 WARNING 行。接着拿着走两步、放口袋、轻摇、翻转，状态一直 NORMAL。</p>
+          <p>B 做 near fall：用力坐下、中速弯腰、慢慢放到垫子上，不报警。然后安全地摔到厚垫子上并带旋转，保持侧躺：LED 快闪、SOS、手机收到消息。等 30 秒时顺便讲 LONG_LIE 和 moved 标志；进 LONG_LIE 后按蓝色按钮，chirp，回 NORMAL。最后换一个高度和角度再摔一次，再按一次。</p>
+        </aside>
+      </section>
+
+      <!-- 13 CONCLUSION (both) -->
+      <section class="slide" data-title="Conclusion">
+        <h2>Conclusion and limitations</h2>
+        <div class="cols">
+          <div>
+            <h3>What we built</h3>
+            <ul>
+              <li>EWMA in assembly on all six axes with separate recursive states, verified against C in the test project and at runtime.</li>
+              <li>Four features in physical units: mg, dps, degrees, still.</li>
+              <li>Five-state detector with three ordered gates: passed the logged fall, rejected 723 rows of daily and near-fall motion.</li>
+              <li>SOS buzzer, Telegram alert and LONG_LIE escalation added without touching the detection path.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Limitations</h3>
+            <ul>
+              <li>Assumes the band is worn roughly flat (Z up). Held sideways and swung hard it can misfire; a fall landing face-up with tilt under 60° is missed.</li>
+              <li>Thresholds tuned on two boards dropped onto cushions, not on wearers. Sitting down onto the floor without an impact is out of scope.</li>
+              <li>No GPS: the address is configured on the laptop.</li>
+            </ul>
+            <h3>Future work</h3>
+            <ul class="small">
+              <li>Compare orientation before and after the impact instead of absolute tilt.</li>
+              <li>Move the relay onto the board's own Wi-Fi.</li>
+            </ul>
+          </div>
+        </div>
+        <p style="margin-top:20px;font-size:26px;color:var(--navy)"><b>Thank you. Questions?</b></p>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>13</span></div>
+        <aside class="speaker-notes">
+          <span class="time">0:25 · Lyu Jinhan</span>
+          <p>总结：六轴汇编 EWMA、四个物理特征、三道有顺序的门、一个锁存的决定。增强功能只读状态，不改检测。</p>
+          <p>限制说清楚：假设佩戴时 Z 轴大致朝上，侧着拿着用力甩可能误报，平躺着落地倾角不够会漏；阈值是在垫子上调的，没有真人数据；没有 GPS。后续可以比较跌倒前后的姿态差，把 relay 搬到板载 Wi-Fi。谢谢大家。</p>
+        </aside>
+      </section>
+
+      <!-- A1 APPENDIX -->
+      <section class="slide" data-title="Appendix A1">
+        <h2>Appendix A1: thresholds, contributions, submission check</h2>
+        <div class="cols">
+          <table class="small">
+            <tr><th>Parameter</th><th>Value</th><th>Purpose</th></tr>
+            <tr><td>FREEFALL_MG</td><td>500 mg</td><td>low acceleration gate</td></tr>
+            <tr><td>IMPACT_MG</td><td>2000 mg</td><td>high acceleration gate</td></tr>
+            <tr><td>ROTATION_DPS</td><td>200 dps</td><td>rapid posture change</td></tr>
+            <tr><td>LYING_TILT_DEG</td><td>60°</td><td>lying posture</td></tr>
+            <tr><td>SUSPECT_TIMEOUT_MS</td><td>1000 ms</td><td>rotation window</td></tr>
+            <tr><td>CONFIRM_STILL_MS</td><td>2000 ms</td><td>wait before deciding</td></tr>
+            <tr><td>CONFIRM_TIMEOUT_MS</td><td>5000 ms</td><td>near-fall recovery (was 3000)</td></tr>
+            <tr><td>LONG_LIE_MS</td><td>30000 ms</td><td>escalation, demo value</td></tr>
+            <tr><td>MOVED_MS</td><td>300 ms</td><td>debounce for the moved flag</td></tr>
+            <tr><td>still</td><td>|acc − 1000| ≤ 120, gyro ≤ 15</td><td>resting check</td></tr>
+          </table>
+          <div>
+            <h3>Contributions</h3>
+            <ul class="small">
+              <li><b>Xu Ruijie:</b> EWMA assembly, sensor processing, open test cases, buzzer driver.</li>
+              <li><b>Lyu Jinhan:</b> fall state machine, status indicator, main loop, LONG_LIE, Telegram relay, board tests.</li>
+              <li><b>Both:</b> threshold tuning, code review of every pull request, evidence recording, slides and rehearsal.</li>
+            </ul>
+            <h3>Submission check</h3>
+            <ul class="small">
+              <li>Imports with File › Import › Existing Projects into Workspace; clean build under two minutes; no GA help needed.</li>
+              <li>Assembly: no C helper, no floating point, r4–r7 pushed and popped, r8–r11 untouched.</li>
+              <li>Every threshold is a named #define; one header per module; evidence in <span class="mono">evidence/</span>.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>A1</span></div>
+        <aside class="speaker-notes">
+          <span class="time">Backup only</span>
+          <p>Q&amp;A 用。被问阈值来源：先说物理意义（1 g 静止、2 g 冲击、200 dps 是快速翻身、60 度是躺下），再说是板上试验调的。被问 alpha：25 是时间常数 4 个样本的折中。被问罚分项：导入方式、build 时间、汇编没有 C helper、寄存器保存，都在右下角。</p>
+        </aside>
+      </section>
+
+      <!-- A2 APPENDIX -->
+      <section class="slide" data-title="Appendix A2">
+        <h2>Appendix A2: problems we hit and what we changed</h2>
+        <table>
+          <tr><th>Problem</th><th>Change</th></tr>
+          <tr><td>Impact values clipped at the default ±2 g</td><td>Accelerometer full scale set to ±4 g (CTRL1_XL = 0x38), headroom above the 2000 mg gate</td></tr>
+          <tr><td>Negative inputs and integer division</td><td>SDIV truncates toward zero like C; assembly and C compared on every axis, every sample, WARNING on mismatch</td></tr>
+          <tr><td>Alerts could block the 20 ms loop</td><td>LED and buzzer patterns advanced by HAL_GetTick() comparisons; Telegram runs in a separate laptop process</td></tr>
+          <tr><td>3 s confirm timeout was too tight</td><td>A logged fall reached FALL 3.0 s after entering CONFIRMING; CONFIRM_TIMEOUT raised to 5 s</td></tr>
+          <tr><td>Cushion settling looked like movement</td><td>moved_after_fall needs 300 ms of continuous not-still readings, not one sample</td></tr>
+          <tr><td>500 ms log hides the impact sample</td><td>Detector decides every 20 ms; the nearest printed row shows 1686 mg. Stated on the evidence slide as a limitation of the log</td></tr>
+        </table>
+        <div class="footer"><span>ElderCare Band · CG2028 Assignment 1</span><span>A2</span></div>
+        <aside class="speaker-notes">
+          <span class="time">Backup only</span>
+          <p>不主动讲。被问"遇到什么问题"时按这六条答：量程削顶、负数除法、非阻塞、3 秒改 5 秒、moved 防抖、500 毫秒日志漏掉冲击样本。</p>
+        </aside>
+      </section>
+
+    </div>
+  </main>
+
+  <aside id="notes-panel" aria-live="polite">
+    <h3 id="notes-title">Speaker notes</h3>
+    <div id="notes-content"></div>
+  </aside>
+
+  <div id="hud">
+    <span>← → / Space · N notes · F full screen</span>
+    <div id="progress"><div></div></div>
+    <span id="counter">1 / 15</span>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    const stage = document.getElementById('stage');
+    const viewport = document.getElementById('viewport');
+    const counter = document.getElementById('counter');
+    const progress = document.querySelector('#progress > div');
+    const notesTitle = document.getElementById('notes-title');
+    const notesContent = document.getElementById('notes-content');
+    let index = Math.max(0, Math.min(slides.length - 1, Number(location.hash.slice(1)) - 1 || 0));
+
+    function fitStage() {
+      const pad = 34;
+      const scale = Math.min((viewport.clientWidth - pad * 2) / 1600, (viewport.clientHeight - pad * 2) / 900);
+      stage.style.transform = `translate(-50%, -50%) scale(${Math.max(.15, scale)})`;
+    }
+
+    function showSlide(next) {
+      index = Math.max(0, Math.min(slides.length - 1, next));
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+      counter.textContent = `${index + 1} / ${slides.length}`;
+      progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+      location.hash = String(index + 1);
+      const slide = slides[index];
+      notesTitle.textContent = `${index + 1}. ${slide.dataset.title || 'Speaker notes'}`;
+      notesContent.innerHTML = slide.querySelector('.speaker-notes')?.innerHTML || '<p>No notes.</p>';
+    }
+
+    function toggleNotes() {
+      document.body.classList.toggle('notes-open');
+      setTimeout(fitStage, 190);
+    }
+
+    async function toggleFullscreen() {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+      setTimeout(fitStage, 120);
+    }
+
+    document.addEventListener('keydown', event => {
+      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); showSlide(index + 1); }
+      if (['ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); showSlide(index - 1); }
+      if (event.key === 'Home') showSlide(0);
+      if (event.key === 'End') showSlide(slides.length - 1);
+      if (event.key.toLowerCase() === 'n') toggleNotes();
+      if (event.key.toLowerCase() === 'f') toggleFullscreen();
+    });
+
+    window.addEventListener('resize', fitStage);
+    window.addEventListener('hashchange', () => {
+      const target = Number(location.hash.slice(1)) - 1;
+      if (Number.isFinite(target) && target !== index) showSlide(target);
+    });
+
+    showSlide(index);
+    fitStage();
+  </script>
+</body>
+</html>
