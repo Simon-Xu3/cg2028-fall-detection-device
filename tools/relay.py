@@ -3,9 +3,11 @@
 #   pip3 install pyserial requests          (once)
 #   cp tools/secrets.py.example tools/secrets.py   and fill it in (git-ignored)
 #   python3 tools/relay.py                  (Ctrl-C to stop)
+#   python3 tools/relay.py COM5             (Windows: give the port yourself if needed)
 
-import glob
+import sys
 import serial      # talks to the board over USB
+from serial.tools import list_ports   # lists the serial ports on this computer
 import requests    # sends HTTP requests to Telegram
 from secrets import BOT_TOKEN, CHAT_ID, HOME_ADDRESS   # private, in the git-ignored secrets.py
 
@@ -23,7 +25,17 @@ def send_telegram(text):
     url = "https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage"
     requests.post(url, data={"chat_id": CHAT_ID, "text": text})
 
-port = glob.glob("/dev/cu.usbmodem*")[0]        # the ST-LINK serial port
+# Find the ST-LINK serial port: give it on the command line (COM5, /dev/ttyACM0, ...)
+# or let the script pick the first port that looks like an ST-LINK / USB modem.
+if len(sys.argv) > 1:
+    port = sys.argv[1]
+else:
+    ports = list_ports.comports()
+    match = [p.device for p in ports if "STLink" in (p.description or "") or "STM" in (p.description or "")
+             or "usbmodem" in p.device or "ttyACM" in p.device]
+    if not match:
+        sys.exit("no ST-LINK port found; plug in the board or run: python3 tools/relay.py <port>")
+    port = match[0]
 board = serial.Serial(port, 115200)             # same baud rate as the firmware
 print("relay: reading", port)
 
