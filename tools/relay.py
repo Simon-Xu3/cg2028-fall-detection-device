@@ -21,9 +21,13 @@ MESSAGES = {
 }
 
 def send_telegram(text):
-    # One HTTP POST to the Telegram Bot API: who to send to, and what
+    # One HTTP POST to the Telegram Bot API: who to send to, and what.
+    # If the laptop has no internet, give up after 5 s and keep reading the board.
     url = "https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": text})
+    try:
+        requests.post(url, data={"chat_id": CHAT_ID, "text": text}, timeout=5)
+    except requests.RequestException as e:
+        print("telegram failed:", e)
 
 # Find the ST-LINK serial port: give it on the command line (COM5, /dev/ttyACM0, ...)
 # or let the script pick the first port that looks like an ST-LINK / USB modem.

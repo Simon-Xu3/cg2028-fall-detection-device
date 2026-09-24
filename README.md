@@ -4,10 +4,12 @@ A wearable fall detector for elderly users, built on the STM32 B-L4S5I-IOT01A Di
 board for NUS CG2028 (Computer Organization), September 2026.
 
 The board reads its on-board accelerometer and gyroscope 50 times a second, low-pass
-filters all six axes with an EWMA filter written in ARM assembly, and runs a four-state
+filters all six axes with an EWMA filter written in ARM assembly, and runs a five-state
 machine that separates everyday movement, near falls and real falls. A confirmed fall
-switches the LED to a fast blink until the wearer presses the user button, and every state
-change is visible on the serial port.
+switches the LED to a fast blink and starts a Morse SOS on a buzzer until the wearer presses
+the user button; if nobody presses it for 30 s the band escalates to `LONG_LIE`. Every state
+change is visible on the serial port, and a small laptop script forwards the alerts to a
+caregiver's Telegram.
 
 ## Features
 
@@ -20,12 +22,19 @@ change is visible on the serial port.
 - **Sensor processing** (`sensor_processing.c`): six filtered axes are reduced to four
   features: acceleration magnitude (mg), gyroscope magnitude (dps), tilt angle (degrees
   from vertical) and a "still" flag.
-- **Fall state machine** (`fall_detector.c`): `NORMAL -> SUSPECT -> CONFIRMING -> FALL`.
-  A fall needs an impact or free-fall spike, followed within 1 s by rotation, followed by
-  lying still for 2 s. Anything that does not complete the sequence returns to `NORMAL`
-  (near fall). `FALL` latches until acknowledged.
+- **Fall state machine** (`fall_detector.c`): `NORMAL -> SUSPECT -> CONFIRMING -> FALL -> LONG_LIE`.
+  A fall needs an impact or free-fall spike, followed within 1 s by rotation, then a 2 s
+  settle time after which the band must be tilted more than 60 degrees and still. Anything
+  that does not complete the sequence returns to `NORMAL` (near fall). `FALL` latches until
+  acknowledged; 30 s without acknowledgement escalates to `LONG_LIE`, and the detector
+  records whether the wearer moved (300 ms debounce) so the alert can say so.
 - **Status indicator** (`status_indicator.c`): LED2 slow blink (500 ms) normally, fast
   blink (100 ms) after a fall; user button with edge detection acknowledges the fall.
+- **Buzzer** (`buzzer.c`): Grove buzzer on D6 plays Morse SOS in `FALL`, a faster SOS in
+  `LONG_LIE`, one chirp on acknowledge. Pattern arrays played by tick comparison, no delays.
+- **Caregiver alert** (`tools/relay.py`): the firmware prints one `ALERT,<event>,...` line
+  the moment a fall is confirmed, escalates, or is acknowledged; the laptop script forwards
+  each one to a Telegram group, including the home address and whether the wearer moved.
 - **Non-blocking main loop** (`main.c`): 20 ms sampling and 500 ms serial reporting are
   both driven by `HAL_GetTick()` comparisons, so the LED and button stay responsive with
   no `HAL_Delay()` anywhere in the loop.
@@ -40,8 +49,9 @@ change is visible on the serial port.
 | LSM6DSL accelerometer + gyroscope (on board, I²C) | motion sensing, accelerometer set to ±4 g at 52 Hz |
 | LED2 and user button B2 (on board) | status and acknowledge |
 | ST-LINK virtual COM port | serial output |
+| Seeed Grove Buzzer v1.2 on a Grove base shield, socket D6 (PB1) | audible SOS (enhancement) |
 
-No external parts are needed for the core system.
+No external parts are needed for the core detection; the buzzer is the only add-on.
 
 ## How it works
 
@@ -66,9 +76,10 @@ State machine and thresholds (all `#define`s in `fall_detector.c`, tuned on the 
 | NORMAL -> SUSPECT | acc_mg < 500 (free fall) or acc_mg > 2000 (impact) |
 | SUSPECT -> CONFIRMING | gyro_dps > 200 within 1 s |
 | SUSPECT -> NORMAL | 1 s with no rotation (near fall) |
-| CONFIRMING -> FALL | after 2 s: tilt_deg > 60 and still |
+| CONFIRMING -> FALL | after a 2 s settle time: tilt_deg > 60 and still |
 | CONFIRMING -> NORMAL | 5 s without lying still (near fall) |
-| FALL -> NORMAL | user button |
+| FALL -> LONG_LIE | 30 s without the user button |
+| FALL or LONG_LIE -> NORMAL | user button |
 
 ## Board test (20 Sep 2026)
 
@@ -126,11 +137,23 @@ CG2028_A1_team_workflow.md                                 team workflow notes
 
 To run the EWMA test cases, build and run `CG2028_Assignment_Test` the same way.
 
-## Planned enhancements
+## Enhancements (done)
 
-See [ENHANCEMENT_PLAN.md](ENHANCEMENT_PLAN.md). In order: a `LONG_LIE` state that
-escalates when a fall is not acknowledged within 30 s, a Grove buzzer playing Morse SOS,
-and a Telegram alert to a caregiver's phone relayed from the serial port.
+Planned in [ENHANCEMENT_PLAN.md](ENHANCEMENT_PLAN.md), all merged and tested on the board:
+
+- `LONG_LIE` escalation 30 s after an unacknowledged fall, with a moved / not-moved flag.
+- Grove buzzer: Morse SOS, faster SOS after escalation, chirp on acknowledge.
+- Telegram alert to a caregiver group via `tools/relay.py` (`pip3 install pyserial requests`,
+  copy `tools/secrets.py.example` to `tools/secrets.py`, run `python3 tools/relay.py`).
+
+Test logs and phone screenshots are in [evidence/](evidence/README.md): real falls, the
+30 s escalation with and without movement, all four Telegram messages, and the
+false-positive / near-fall runs (walking, pocket, shaking, sitting down, slow lie-down)
+with zero false alarms.
+
+Known limits: no GPS (the home address is configured on the laptop), thresholds tuned on
+two boards held in the hand rather than on a person, and the band is assumed to be worn
+with its Z axis roughly vertical.
 
 ## Team
 
