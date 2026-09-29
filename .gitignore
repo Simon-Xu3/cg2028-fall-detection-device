@@ -29,6 +29,6 @@
 **/Core/Inc/secrets.h
 
 # Telegram bot token and chat id
-/tools/secrets.py
+**/tools/secrets.py
 __pycache__/
-/tools/secrets.sh
+**/tools/secrets.sh

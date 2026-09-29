@@ -1,6 +1,7 @@
 # Forward the band's ALERT lines from the serial port to the caregiver's Telegram.
 #
-#   pip3 install pyserial requests          (once)
+# Run from the CG2028_Assignment project directory. See tools/README.md.
+#   python3 -m pip install -r tools/requirements.txt   (once)
 #   cp tools/secrets.py.example tools/secrets.py   and fill it in (git-ignored)
 #   python3 tools/relay.py                  (Ctrl-C to stop)
 #   python3 tools/relay.py COM5             (Windows: give the port yourself if needed)

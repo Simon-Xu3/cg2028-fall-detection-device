@@ -110,6 +110,8 @@ and prints `ALL 5 OPEN TEST CASES PASSED`.
 ```
 code/
   CG2028_Assignment.zip_expanded/CG2028_Assignment/        main firmware (STM32CubeIDE project)
+    tools/                                                laptop Telegram relay and setup guide
+    README.md                                             standalone project instructions
     Core/Src/main.c                                        20 ms loop, UART reporting
     Core/Src/mov_avg.s                                     EWMA filter in assembly
     Core/Src/sensor_processing.c  Core/Inc/sensor_processing.h
@@ -122,6 +124,14 @@ CG2028_A1_team_workflow.md                                 team workflow notes
 ```
 
 ## Build and run
+
+The Telegram tools are inside the main STM32CubeIDE project at
+`code/CG2028_Assignment.zip_expanded/CG2028_Assignment/tools/`. All `tools/...` commands below
+are run from that project directory, not the repository root:
+
+```bash
+cd code/CG2028_Assignment.zip_expanded/CG2028_Assignment
+```
 
 1. Open STM32CubeIDE 1.19 and choose **File > Import > Existing Projects into Workspace**,
    pointing at `code/`. Import both projects.

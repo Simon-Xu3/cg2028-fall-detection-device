@@ -1,5 +1,8 @@
 # Slides outline and demo script
 
+Telegram tool location: `code/CG2028_Assignment.zip_expanded/CG2028_Assignment/tools/` (relative to the repository root).
+Run any `tools/...` commands below from the main project directory.
+
 For the CG2028 Assignment 1 presentation (deadline 30 Sep 2026, 08:00). Everything the
 rubric asks for is mapped to a slide below, with the exact content, the diagram each slide
 needs, who presents it, and the evidence file to pull from. Build the deck in this order:

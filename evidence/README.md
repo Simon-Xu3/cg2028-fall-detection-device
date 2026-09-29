@@ -1,5 +1,8 @@
 # Test evidence
 
+Telegram tool location: `code/CG2028_Assignment.zip_expanded/CG2028_Assignment/tools/` (relative to the repository root).
+Run any `tools/...` commands below from the main project directory.
+
 Serial logs recorded from the board (115200 baud) and phone screenshots. Every CSV row is
 one line printed by the firmware: `state,acc_mg,gyro_dps,tilt_deg,still` every 500 ms, plus
 `ALERT,...` lines the moment a fall is confirmed, escalates, or is acknowledged.

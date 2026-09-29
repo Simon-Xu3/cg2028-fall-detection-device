@@ -1,5 +1,8 @@
 # Enhancement plan (the optional 9 marks)
 
+Telegram tool location: `code/CG2028_Assignment.zip_expanded/CG2028_Assignment/tools/` (relative to the repository root).
+Run any `tools/...` commands below from the main project directory.
+
 Status: 20 Sep 2026. Core detection is done and tested on the board (PR #4).
 Everything below is extra. Deadline is 30 Sep 08:00, so code freeze is 26 Sep;
 27-29 Sep is slides, report and rehearsal only.
